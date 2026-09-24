@@ -3,7 +3,7 @@ import Metal
 import UIKit
 
 public extension Entity {
-    static func renderingTarget(renderer: any RenderingSystemRenderer, boardSize: SIMD2<Float> = [1, 1], textureSize: SIMD2<Int> = [1024, 1024], blending: RenderingTargetComponent.Blending = .over, useDepth: Bool = true, vertexFunction: any MTLFunction, device: any MTLDevice = MTLCreateSystemDefaultDevice()!, fragmentFunction: any MTLFunction, rasterizationRateMap: (horizontal: [Float], vertical: [Float])? = nil) throws -> ModelEntity {
+    static func renderingTarget(renderer: any RenderingSystemRenderer, boardSize: SIMD2<Float> = [1, 1], textureSize: SIMD2<Int> = [1024, 1024], blending: RenderingTargetComponent.Blending = .over, useDepth: Bool = true, vertexFunction: any MTLFunction, device: any MTLDevice = MTLCreateSystemDefaultDevice()!, fragmentFunction: any MTLFunction, rasterizationRateMap: (horizontal: [Float], vertical: [Float])? = nil, rgbGamma: Float = 1, edgeFalloff: Float = 0) throws -> ModelEntity {
         let rasterizationRateMapDescriptor = if let rasterizationRateMap { MTLRasterizationRateMapDescriptor(screenSize: .init(width: textureSize.x, height: textureSize.y, depth: 1), layers: [
                 // assuming viewCount = 2
                 MTLRasterizationRateLayerDescriptor(
@@ -22,9 +22,9 @@ public extension Entity {
         NSLog("%@", "physical size: \(rateMap.physical)")
 
         let llTexture = try LowLevelTexture(descriptor: .init(textureType: .type2DArray, pixelFormat: .rgba16Float, width: rateMap.physical.width, height: rateMap.physical.height, depth: 1, arrayLength: 2, textureUsage: [.renderTarget, .shaderRead]))
-        return renderingTarget(renderer: renderer, boardSize: boardSize, texture: llTexture, blending: blending, useDepth: useDepth, vertexFunction: vertexFunction, fragmentFunction: fragmentFunction, rateMap: rateMap)
+        return renderingTarget(renderer: renderer, boardSize: boardSize, texture: llTexture, blending: blending, useDepth: useDepth, vertexFunction: vertexFunction, fragmentFunction: fragmentFunction, rateMap: rateMap, rgbGamma: rgbGamma, edgeFalloff: edgeFalloff)
     }
-    static func renderingTarget(renderer: any RenderingSystemRenderer, boardSize: SIMD2<Float> = [1, 1], texture: LowLevelTexture, blending: RenderingTargetComponent.Blending = .over, useDepth: Bool = true, vertexFunction: any MTLFunction, fragmentFunction: any MTLFunction, rateMap: RateMap) -> ModelEntity {
+    static func renderingTarget(renderer: any RenderingSystemRenderer, boardSize: SIMD2<Float> = [1, 1], texture: LowLevelTexture, blending: RenderingTargetComponent.Blending = .over, useDepth: Bool = true, vertexFunction: any MTLFunction, fragmentFunction: any MTLFunction, rateMap: RateMap, rgbGamma: Float = 1, edgeFalloff: Float = 0) -> ModelEntity {
         let e = ModelEntity(mesh: .generatePlane(width: boardSize.x, height: boardSize.y), materials: [UnlitMaterial(color: .clear)])
         e.name = "renderingTarget"
         e.components.set(CameraProjectionBillBoardComponent(
@@ -37,7 +37,7 @@ public extension Entity {
         e.components.set(CameraOrientationAlignedBillboardComponent())
         e.components.set(CameraToBillboardFrustumVisualizationComponent())
         Task {
-            var m = try! await ShaderGraphMaterial.unlit(texture2DArray: TextureResource(from: texture), rateMapDecodeTexture: rateMapDecodeTexture)
+            var m = try! await ShaderGraphMaterial.unlit(texture2DArray: TextureResource(from: texture), premultipliedAlpha: blending == .preMultiplied, rgbGamma: rgbGamma, edgeFalloff: edgeFalloff, rateMapDecodeTexture: rateMapDecodeTexture)
 //            m.readsDepth = false
 //            m.writesDepth = false
             m.faceCulling = .back
