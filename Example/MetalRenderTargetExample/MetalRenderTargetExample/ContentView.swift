@@ -12,7 +12,7 @@ struct ContentView: View {
     }
 }
 
-#Preview(windowStyle: .automatic) {
+#Preview {
     ContentView()
         .environment(AppModel())
 }

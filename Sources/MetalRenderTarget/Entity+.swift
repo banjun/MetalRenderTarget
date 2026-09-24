@@ -1,6 +1,5 @@
 import RealityKit
 import Metal
-import UIKit
 
 public extension Entity {
     static func renderingTarget(renderer: any RenderingSystemRenderer, boardSize: SIMD2<Float> = [1, 1], textureSize: SIMD2<Int> = [1024, 1024], blending: RenderingTargetComponent.Blending = .over, useDepth: Bool = true, vertexFunction: any MTLFunction, device: any MTLDevice = MTLCreateSystemDefaultDevice()!, fragmentFunction: any MTLFunction, rasterizationRateMap: (horizontal: [Float], vertical: [Float])? = nil, rgbGamma: Float = 1, edgeFalloff: Float = 0) throws -> ModelEntity {
@@ -25,7 +24,7 @@ public extension Entity {
         return renderingTarget(renderer: renderer, boardSize: boardSize, texture: llTexture, blending: blending, useDepth: useDepth, vertexFunction: vertexFunction, fragmentFunction: fragmentFunction, rateMap: rateMap, rgbGamma: rgbGamma, edgeFalloff: edgeFalloff)
     }
     static func renderingTarget(renderer: any RenderingSystemRenderer, boardSize: SIMD2<Float> = [1, 1], texture: LowLevelTexture, blending: RenderingTargetComponent.Blending = .over, useDepth: Bool = true, vertexFunction: any MTLFunction, fragmentFunction: any MTLFunction, rateMap: RateMap, rgbGamma: Float = 1, edgeFalloff: Float = 0) -> ModelEntity {
-        let e = ModelEntity(mesh: .generatePlane(width: boardSize.x, height: boardSize.y), materials: [UnlitMaterial(color: .clear)])
+        let e = ModelEntity(mesh: .generatePlane(width: boardSize.x, height: boardSize.y), materials: [UnlitMaterial()])
         e.name = "renderingTarget"
         e.components.set(CameraProjectionBillBoardComponent(
             lt: [-boardSize.x / 2, boardSize.y / 2, 0],
@@ -51,8 +50,10 @@ public extension Entity {
         e.name = "renderingSystemHelperEntities"
         e.addChild(DeviceAnchorComponent.entity())
         e.addChild(WorldTrackingProviderComponent.entity())
+        #if os(visionOS)
         e.addChild(DeviceViewpointComponent.entity())
         e.addChild(StereoPropertiesProviderComponent.entity())
+        #endif
         if registerSystems {
             CameraOrientationAlignedBillboardSystem.registerSystem()
             WorldTrackingSystem.registerSystem()

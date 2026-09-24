@@ -1,7 +1,9 @@
 import RealityKit
 import ARKit
 
+@available(visionOS 27, *)
 public struct DeviceViewpointComponent: Component {
+#if os(visionOS)
     public var viewpointProperties: ViewpointProperties?
     public var lastUpdated: Date
     public var minimumInterval: TimeInterval // rarely updated, most sessions are just one shot
@@ -19,9 +21,12 @@ public struct DeviceViewpointComponent: Component {
         self.lastUpdated = lastUpdated
         self.minimumInterval = minimumInterval
     }
+#endif
 }
 
+@available(visionOS 27, *)
 public struct StereoPropertiesProviderComponent: Component {
+#if os(visionOS)
     public var arkitSession: ARKitSession?
     public var stereoPropertiesProvider: StereoPropertiesProvider?
     public var latestViewpointProperties: ViewpointProperties?
@@ -31,13 +36,16 @@ public struct StereoPropertiesProviderComponent: Component {
         e.name = "StereoPropertiesProviderComponent"
         return e
     }
+#endif
 }
 
+@available(visionOS 27, *)
 public struct StereoPropertiesSystem: System {
     static let stereoPropertiesProviderQuery = EntityQuery(where: .has(StereoPropertiesProviderComponent.self))
     static let deviceViewpointQuery = EntityQuery(where: .has(DeviceViewpointComponent.self))
     public init(scene: Scene) {}
     public func update(context: SceneUpdateContext) {
+#if os(visionOS)
         guard StereoPropertiesProvider.isSupported else { return }
         // choose first enabled one
         guard let stereoPropertiesProviderEntity = (context.entities(matching: Self.stereoPropertiesProviderQuery, updatingSystemWhen: .rendering).first {$0.isEnabledInHierarchy}) else { return }
@@ -83,5 +91,6 @@ public struct StereoPropertiesSystem: System {
             c.viewpointProperties = latestViewpointProperties
             NSLog("%@", "feed viewpoint properties: \(String(describing: c.viewpointProperties))")
         }
+#endif
     }
 }

@@ -24,6 +24,7 @@ struct ImmersiveView: View {
             box2.position = [0.5, 1, -1]
             content.add(box2)
 
+            #if os(visionOS)
             // move around render target and other entities by gesture
             [renderTarget, box1, box2].forEach { e in
                 ManipulationComponent.configureEntity(e)
@@ -33,10 +34,20 @@ struct ImmersiveView: View {
                 e.components[ManipulationComponent.self]!.dynamics.primaryRotationBehavior = .unconstrained
                 e.components[ManipulationComponent.self]!.dynamics.secondaryRotationBehavior = .unconstrained
             }
+            #else
+            // in macOS, one camera entity should be added to get from WorldTrackingSystem
+            let camera = Entity()
+            camera.components.set(PerspectiveCameraComponent())
+            // camera.position = [0, 1.5, 0]
+            content.add(camera)
+            content.cameraTarget = renderTarget
+            #endif
         }
     }
 }
 
-#Preview(immersionStyle: .full) {
+#if os(visionOS)
+#Preview {
     ImmersiveView()
 }
+#endif

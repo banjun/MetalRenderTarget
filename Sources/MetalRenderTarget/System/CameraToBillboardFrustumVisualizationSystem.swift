@@ -1,5 +1,12 @@
 import RealityKit
+import CoreGraphics
+#if canImport(AppKit)
+import AppKit
+#endif
+#if canImport(UIKit)
 import UIKit
+#endif
+
 public struct CameraToBillboardFrustumVisualizationComponent: Component {
     public var visualizationRoot: Entity
     @MainActor public init() {
@@ -16,7 +23,11 @@ public struct CameraToBillboardFrustumVisualizationSystem: System {
     public init(scene: Scene) {}
     public func update(context: SceneUpdateContext) {
         let originFromDeviceTransform = context.entities(matching: Self.deviceAnchorQuery, updatingSystemWhen: .rendering).lazy.compactMap({$0.components[DeviceAnchorComponent.self]!.originFromDeviceTransform}).first
+#if os(visionOS)
         let deviceViewpointTransforms = context.entities(matching: Self.deviceViewpointQuery, updatingSystemWhen: .rendering).lazy.compactMap({$0.components[DeviceViewpointComponent.self].flatMap(\.deviceViewpointTransforms)}).first ?? [.init(diagonal: .one)]
+#else
+        let deviceViewpointTransforms: [simd_float4x4] = [.init(diagonal: .one)]
+#endif
 
         context.entities(matching: Self.query, updatingSystemWhen: .rendering).forEach { e in
             let vc = e.components[CameraToBillboardFrustumVisualizationComponent.self]!
@@ -31,7 +42,7 @@ public struct CameraToBillboardFrustumVisualizationSystem: System {
                 e.addChild(vc.visualizationRoot)
 
                 deviceViewpointTransforms.enumerated().flatMap { i, _ in
-                    let cylinder = ModelEntity(mesh: .generateCylinder(height: 1, radius: 0.005), materials: [UnlitMaterial(color: [UIColor.green, UIColor.red][i % 2], applyPostProcessToneMap: false)])
+                    let cylinder = ModelEntity(mesh: .generateCylinder(height: 1, radius: 0.005), materials: [UnlitMaterial(color: [.green, .red][i % 2], applyPostProcessToneMap: false)])
                     return [cylinder.clone(recursive: true), cylinder.clone(recursive: true), cylinder.clone(recursive: true), cylinder.clone(recursive: true)]
                 }.forEach {vc.visualizationRoot.addChild($0)}
             }

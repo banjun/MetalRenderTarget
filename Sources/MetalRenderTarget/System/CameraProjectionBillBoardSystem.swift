@@ -30,7 +30,11 @@ public struct CameraProjectionBillBoardSystem: System {
     public init(scene: Scene) {}
     public func update(context: SceneUpdateContext) {
         guard let originFromDeviceTransform = context.entities(matching: Self.deviceAnchorQuery, updatingSystemWhen: .rendering).lazy.compactMap({$0.components[DeviceAnchorComponent.self]!.originFromDeviceTransform}).first else { return }
+#if os(visionOS)
         let deviceViewpointTransforms = context.entities(matching: Self.deviceViewpointQuery, updatingSystemWhen: .rendering).lazy.compactMap({$0.components[DeviceViewpointComponent.self].flatMap(\.deviceViewpointTransforms)}).first ?? [.init(diagonal: .one)]
+#else
+        let deviceViewpointTransforms: [simd_float4x4] = [.init(diagonal: .one)]
+#endif
 
         context.entities(matching: Self.billboardQuery, updatingSystemWhen: .rendering).forEach { e in
             var c = e.components[CameraProjectionBillBoardComponent.self]!

@@ -36,6 +36,7 @@ public struct WorldTrackingSystem: System {
 
     public init(scene: Scene) {}
     public func update(context: SceneUpdateContext) {
+#if os(visionOS)
         let worldTrackingProviders = context.entities(matching: Self.worldTrackingProviderQuery, updatingSystemWhen: .rendering)
         guard let worldTrackingProvider = (worldTrackingProviders.lazy.compactMap {$0.components[WorldTrackingProviderComponent.self]!.worldTrackingProvider}.first) else {
             let arkitSession = ARKitSession()
@@ -53,10 +54,15 @@ public struct WorldTrackingSystem: System {
         }
 
         let deviceAnchor = worldTrackingProvider.queryDeviceAnchor(atTimestamp: CACurrentMediaTime())
+        let originFromDeviceTransform = deviceAnchor?.originFromAnchorTransform
+#else
+        // in macOS, to make this work, PerspectiveCamera entity should be added in RealityView content
+        let originFromDeviceTransform: simd_float4x4? = context.entities(matching: .init(where: .has(PerspectiveCameraComponent.self)), updatingSystemWhen: .rendering).first {_ in true}?.transformMatrix(relativeTo: nil)
+#endif
         context.entities(matching: Self.deviceAnchorQuery, updatingSystemWhen: .rendering).forEach { e in
             var c = e.components[DeviceAnchorComponent.self]!
             defer {e.components.set(c)}
-            c.originFromDeviceTransform = deviceAnchor?.originFromAnchorTransform
+            c.originFromDeviceTransform = originFromDeviceTransform
         }
     }
 }
