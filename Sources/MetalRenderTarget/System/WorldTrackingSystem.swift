@@ -38,10 +38,14 @@ public struct WorldTrackingSystem: System {
     public func update(context: SceneUpdateContext) {
 #if os(visionOS)
         let worldTrackingProviders = context.entities(matching: Self.worldTrackingProviderQuery, updatingSystemWhen: .rendering)
-        guard let worldTrackingProvider = (worldTrackingProviders.lazy.compactMap {$0.components[WorldTrackingProviderComponent.self]!.worldTrackingProvider}.first) else {
+        guard worldTrackingProviders.count(where: {_ in true}) > 0 else { return }
+        guard let worldTrackingProvider = (worldTrackingProviders.compactMap {$0.components[WorldTrackingProviderComponent.self]!.worldTrackingProvider}.first) else {
+            NSLog("%@", "starting ARKitSession for WorldTrackingProvider")
             let arkitSession = ARKitSession()
             let worldTrackingProvider = WorldTrackingProvider()
-            worldTrackingProviders.forEach {$0.components.set(WorldTrackingProviderComponent(arkitSession: arkitSession, worldTrackingProvider: worldTrackingProvider))}
+            worldTrackingProviders.forEach {
+                $0.components.set(WorldTrackingProviderComponent(arkitSession: arkitSession, worldTrackingProvider: worldTrackingProvider))
+            }
             Task {
                 do {
                     try await arkitSession.run([worldTrackingProvider])
