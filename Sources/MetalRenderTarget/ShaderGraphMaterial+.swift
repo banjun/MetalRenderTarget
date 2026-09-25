@@ -1,12 +1,12 @@
 import RealityKit
 
-extension ShaderGraphMaterial {
+public extension ShaderGraphMaterial {
     static func unlit(texture2DArray: TextureResource, premultipliedAlpha: Bool = false, rgbGamma: Float = 1, edgeFalloff: Float = 0, rateMapDecodeTexture: RateMapDecodeTexture? = nil) async throws -> ShaderGraphMaterial {
         try await .init(program: .init(descriptor: .unlit(texture2DArray: texture2DArray, premultipliedAlpha: premultipliedAlpha, rgbGamma: rgbGamma, edgeFalloff: edgeFalloff, rateMapDecodeTexture: rateMapDecodeTexture)))
     }
 }
 
-extension ShaderGraphMaterial.Program.Descriptor {
+public extension ShaderGraphMaterial.Program.Descriptor {
     static func unlit(texture2DArray: TextureResource, premultipliedAlpha: Bool = false, rgbGamma: Float = 1, edgeFalloff: Float = 0, rateMapDecodeTexture: RateMapDecodeTexture? = nil) throws -> sending ShaderGraphMaterial.Program.Descriptor {
         let lib = ShaderGraph.NodeLibrary(version: .default)
         let inputTexture = ShaderGraph.NodeDefinition.Input(name: "texture", type: .texture)
